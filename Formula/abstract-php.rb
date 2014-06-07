@@ -81,6 +81,7 @@ class AbstractPhp < Formula
     option 'with-mssql', 'Include MSSQL-DB support'
     option 'with-pdo-oci', 'Include Oracle databases (requries ORACLE_HOME be set)'
     option 'with-cgi', 'Enable building of the CGI executable (implies --without-apache)'
+    option 'with-embed', 'Enable building of PHP library (implies --without-apache/cgi)'
     option 'with-fpm', 'Enable building of the fpm SAPI executable (implies --without-apache)'
     option 'with-phpdbg', 'Enable building of the phpdbg SAPI executable (PHP 5.4 and above)'
     option 'with-apache', 'Enable building of shared Apache 2.0 Handler module, overriding any options which disable apache'
@@ -109,7 +110,7 @@ class AbstractPhp < Formula
   end
 
   def build_apache?
-    build.with?('apache') || !(build.with?('cgi') || build.with?('fpm'))
+    build.with?('apache') && !(build.with?('cgi') || build.with?('fpm') || build.with?('embed'))
   end
 
   def php_version
@@ -176,7 +177,7 @@ INFO
   end
 
   def skip_pear_config_set?
-    build.without? 'pear'
+    build.without?('pear') || build.with?('embed')
   end
 
   def patches
@@ -270,6 +271,10 @@ INFO
       touch prefix+'var/log/php-fpm.log'
       plist_path.write plist
       plist_path.chmod 0644
+    elsif build.with? 'embed'
+      args << "--enable-embed=shared"
+      args << "--disable-cli"
+      args << "--disable-cgi"
     elsif build.with? 'cgi'
       args << "--enable-cgi"
     end
